@@ -1,27 +1,40 @@
-import requests
+from flask import Flask, jsonify, request
 from PIL import Image
 import json
 import base64
 from io import BytesIO
 import time
-def enviar_imagen(url_foto):
-	try:
-		img = Image.open(url_foto)
-		image_toBytes = BytesIO()
-		img.save(image_toBytes, format=img.format)
-		image_toBytes = image_toBytes.getvalue()
-		image_encoding = base64.b64encode(image_toBytes)
-		image_convert_json = image_encoding.decode('utf-8') #Se completa conversión
-		time.sleep(1)
-		files = {
-		    "text" : "Diccionario enviado con la imagen",
-		    "img" : image_convert_json
-		    }
 
-		r = requests.post("http://192.168.0.14:2555", json=json.dumps(files)) #POST to server as json
+app = Flask(__name__)
 
-		print(r.json())
-	except Exception as e:
-		print("ha ocrurrido un error ->: " + str(e))
+@app.route("/", methods=["GET", "POST"])
+def index():
+    json_data = request.get_json() #POSTDATA
+    dict_data = json.loads(json_data)
+    img = dict_data["img"]
+    img = base64.b64decode(img)
+    img = BytesIO(img)
+    img = Image.open(img)
+    #img.show()
 
-enviar_imagen("./test.png") # Se agrega URL DE LA IMAGEN
+    img.save('rasto.png')
+
+    
+    img_shape = img.size
+
+    text = "Se ha cambiado con é" 
+
+    response = {
+        "text" : text,
+        "img_shape":img_shape        
+        }
+
+    return jsonify(response)
+
+
+
+
+
+if __name__ == "__main__":
+    app.debug = True
+    app.run(host = "0.0.0.0", port = 2555)
